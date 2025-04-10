@@ -38,9 +38,9 @@ def extract_and_resize(image_path,target_size=(800, 1100), padding=10, save_path
     h = h + padding * 2
     
     timetable_roi = img[y:y+h, x:x+w]
-    # resized = cv2.resize(timetable_roi, target_size)
+
     # cv2.imwrite(save_path, timetable_roi) if save_path else None [저장기능]
-    return timetable_roi
+    return resized
 
 def get_contours(img,path):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -71,10 +71,10 @@ def get_contours(img,path):
         if w > 30 and h > 20:  # 너무 작은 건 무시
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
             
-    # cv2.imshow("Detected timetable cells", img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # save_image(img, save_path=path)  # 저장기능
+    cv2.imshow("Detected timetable cells", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    save_image(img, save_path=path)  # 저장기능
     
 
     return contours
@@ -82,40 +82,7 @@ def get_contours(img,path):
 def save_image(image, save_path):
     cv2.imwrite(save_path, image) if save_path else None
 
-def draw_day_of_week(image):
-    
-    image_height,image_width = image.shape[:2]
-    
-    # x, y, w, h 구조
-    day_of_week = {
-        'Mon': (43, 0, 150, 52),
-        'Tue': (196, 0, 150, 54),
-        'Wed': (349, 0, 140 , 55),
-        'Thu': (497, 0, 145, 55),
-        'Fri': (655, 0, 150, 55),
-    }
-
-    x, y, w, h = day_of_week['Mon']
-    # 좌표 비율 계산
-    x_ratio = x / image_width
-    y_ratio = y / image_height
-    w_ratio = w / image_width
-    h_ratio = h / image_height
-    
-    # 비율 → 다시 실제 픽셀 좌표로 환산
-    x_px = int(x_ratio * image_width)
-    y_px = int(y_ratio * image_height)
-    w_px = int(w_ratio * image_width)
-    h_px = int(h_ratio * image_height)
-    
-    
-    rec_image = cv2.rectangle(image, (x_px, y_px), (x_px + w_px, y_px + h_px), (0, 255, 0), 2)
-    # 이미지 보기
-    plt.imshow(cv2.cvtColor(rec_image, cv2.COLOR_BGR2RGB))
-    plt.show()
-
-    
-
+        
 def show_image(img):
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     plt.figure(figsize=(10, 10))
@@ -149,7 +116,6 @@ def process_folder(folder_path):
             ratio = get_ratio(roi_image) #이미지 비율 보기.
             # show_image(roi_image)
             get_contours(roi_image,file_path)
-            draw_day_of_week(roi_image)
             
             
         
