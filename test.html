@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>비는 시간표</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -12,8 +13,41 @@
 
     h2 {
       text-align: center;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       color: #333;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 0 8px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+    }
+
+    button:hover {
+      background-color: #43a047;
+    }
+
+    textarea {
+      display: block;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 900px;
+      height: 120px;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
     }
 
     table {
@@ -66,56 +100,105 @@
   </style>
 </head>
 <body>
+
   <h2>비는 시간표</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>시간</th>
-        <th>월</th>
-        <th>화</th>
-        <th>수</th>
-        <th>목</th>
-        <th>금</th>
-      </tr>
-    </thead>
-    <tbody>
-      <script>
-        const schedule = {
-          "월": ["09:00-10:30", "16:15-21:00"],
-          "화": ["11:45-15:00", "16:15-21:00"],
-          "수": ["16:15-21:00"],
-          "목": ["11:45-13:30", "14:45-21:00"],
-          "금": ["09:00-13:30", "16:15-21:00"]
-        };
 
-        const startMinutes = 9 * 60;
-        const endMinutes = 21 * 60;
+  <div class="buttons">
+    <button onclick="saveAsImage()">📸 사진으로 저장</button>
+    <button onclick="copyFreeTime()">📋 비는 시간 복사</button>
+  </div>
 
-        function inRangeExact(minutes, ranges) {
-          return ranges.some(range => {
-            const [start, end] = range.split('-').map(t => {
-              const [h, m] = t.split(':').map(Number);
-              return h * 60 + m;
-            });
-            return minutes >= start && minutes < end;
-          });
-        }
+  <div id="timetable-wrapper">
+    <table id="timetable">
+      <thead>
+        <tr>
+          <th>시간</th>
+          <th>월</th>
+          <th>화</th>
+          <th>수</th>
+          <th>목</th>
+          <th>금</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- JS로 생성됨 -->
+      </tbody>
+    </table>
+  </div>
 
-        for (let t = startMinutes; t < endMinutes; t += 15) {
-          const h = String(Math.floor(t / 60)).padStart(2, '0');
-          const m = String(t % 60).padStart(2, '0');
-          const timeStr = `${h}:${m}`;
-          document.write(`<tr><td class="time-col">${timeStr}</td>`);
+  <textarea id="free-text" readonly placeholder="복사된 '비는 시간' 텍스트가 여기에 표시됩니다."></textarea>
 
-          ['월', '화', '수', '목', '금'].forEach(day => {
-            const isFree = schedule[day] && inRangeExact(t, schedule[day]);
-            document.write(`<td class="${isFree ? 'free' : ''}"></td>`);
-          });
+  <script>
+    const schedule = {
+      "월": ["09:00-10:30", "16:15-21:00"],
+      "화": ["11:45-15:00", "16:15-21:00"],
+      "수": ["16:15-21:00"],
+      "목": ["11:45-13:30", "14:45-21:00"],
+      "금": ["09:00-13:30", "16:15-21:00"]
+    };
 
-          document.write('</tr>');
-        }
-      </script>
-    </tbody>
-  </table>
+    const startMinutes = 9 * 60;
+    const endMinutes = 21 * 60;
+    const days = ["월", "화", "수", "목", "금"];
+    const tbody = document.getElementById('table-body');
+
+    function inRangeExact(minutes, ranges) {
+      return ranges.some(range => {
+        const [start, end] = range.split('-').map(t => {
+          const [h, m] = t.split(':').map(Number);
+          return h * 60 + m;
+        });
+        return minutes >= start && minutes < end;
+      });
+    }
+
+    // 표 생성
+    for (let t = startMinutes; t < endMinutes; t += 15) {
+      const h = String(Math.floor(t / 60)).padStart(2, '0');
+      const m = String(t % 60).padStart(2, '0');
+      const timeStr = `${h}:${m}`;
+      const tr = document.createElement("tr");
+
+      const timeCell = document.createElement("td");
+      timeCell.className = "time-col";
+      timeCell.textContent = timeStr;
+      tr.appendChild(timeCell);
+
+      days.forEach(day => {
+        const td = document.createElement("td");
+        const isFree = schedule[day] && inRangeExact(t, schedule[day]);
+        if (isFree) td.className = "free";
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    }
+
+    // 사진으로 저장
+    function saveAsImage() {
+      html2canvas(document.getElementById('timetable-wrapper')).then(canvas => {
+        const link = document.createElement('a');
+        link.download = '비는시간표.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
+    // 비는 시간 텍스트 복사
+    function copyFreeTime() {
+      let text = '';
+      for (const day of days) {
+        const times = schedule[day] || [];
+        const line = times.length ? `${day} ${times.join(', ')}` : `${day} (없음)`;
+        text += line + '\n';
+      }
+      const textarea = document.getElementById('free-text');
+      textarea.value = text.trim();
+      textarea.select();
+      document.execCommand('copy');
+      alert('비는 시간이 복사되었습니다!');
+    }
+  </script>
+
 </body>
 </html>
