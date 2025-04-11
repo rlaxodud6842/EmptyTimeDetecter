@@ -91,14 +91,11 @@
         const startMinutes = 9 * 60;
         const endMinutes = 21 * 60;
 
-        function inRange(timeStr, ranges) {
-          const [h, m] = timeStr.split(':').map(Number);
-          const minutes = h * 60 + m;
-
+        function inRangeExact(minutes, ranges) {
           return ranges.some(range => {
             const [start, end] = range.split('-').map(t => {
-              const [sh, sm] = t.split(':').map(Number);
-              return sh * 60 + sm;
+              const [h, m] = t.split(':').map(Number);
+              return h * 60 + m;
             });
             return minutes >= start && minutes < end;
           });
@@ -111,7 +108,7 @@
           document.write(`<tr><td class="time-col">${timeStr}</td>`);
 
           ['월', '화', '수', '목', '금'].forEach(day => {
-            const isFree = schedule[day] && inRange(timeStr, schedule[day]);
+            const isFree = schedule[day] && inRangeExact(t, schedule[day]);
             document.write(`<td class="${isFree ? 'free' : ''}"></td>`);
           });
 
