@@ -4,7 +4,7 @@ import os
 from PIL import Image
 import numpy as np
 
-def extract_and_resize(image_path,target_size=(800, 1100), padding=10, save_path=None):
+def extract_timetable_box(image_path, padding=-1):
     img = cv2.imread(image_path)
     if img is None:
         print(f"❌ 이미지 못 불러옴: {image_path}")
@@ -36,108 +36,83 @@ def extract_and_resize(image_path,target_size=(800, 1100), padding=10, save_path
     y = max(y - padding, 0)
     w = w + padding * 2
     h = h + padding * 2
-    
-    timetable_roi = img[y:y+h, x:x+w]
-    resized = cv2.resize(timetable_roi, target_size)
-    # cv2.imwrite(save_path, timetable_roi) if save_path else None [저장기능]
-    return resized
 
-def get_contours(img,path):
+    timetable_roi = img[y:y+h, x:x+w]
+    return timetable_roi
+
+def draw_day_of_week(image,countours):
+    image_height, image_width = image.shape[:2]
+
+    day_of_week_ratio = {
+        'Mon': (0.055, 0.0, 0.18, 0.05),
+        'Tue': (0.245, 0.0, 0.18, 0.05),
+        'Wed': (0.435, 0.0, 0.18, 0.05),
+        'Thu': (0.625, 0.0, 0.18, 0.05),
+        'Fri': (0.815, 0.0, 0.18, 0.05)
+    }
+
+    for key, (x_r, y_r, w_r, h_r) in day_of_week_ratio.items():
+        x = int(x_r * image_width)
+        y = int(y_r * image_height)
+        w = int(w_r * image_width)
+        h = int(h_r * image_height)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(image, key, (x, y + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+        
+    for cnt in countours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        if w > 30 and h > 20:
+            # 🗓️ 요일 판단
+            day = "Unknown"
+            for d, (x_ratio, _, w_ratio, _) in day_of_week_ratio.items():
+                start_x = int(x_ratio * image_width)
+                end_x = int((x_ratio + w_ratio) * image_width)
+                if start_x <= x <= end_x or start_x <= x + w // 2 <= end_x:
+                    day = d
+                    break
+
+            # 박스 그리기
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(image, day, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5, (0, 0, 255), 1)
+
+    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    plt.axis('off')
+    plt.title("ROI for Days of Week")
+    plt.show()
+
+def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # 블랙 모드 감지 및 반전
     mean_val = np.mean(gray)
     is_dark = mean_val < 127
     if is_dark:
         gray = cv2.bitwise_not(gray)
-        
-        kernel_sharpen = np.array([[0, -0.5, 0],
-                                   [-0.5, 3,-0.5],
-                                   [0, -0.5, 0]])
-        sharpened = cv2.filter2D(gray, -1, kernel_sharpen)
-        gray = sharpened
-        
+        kernel_sharpen = np.array([[0, -0.5, 0], [-0.5, 3, -0.5], [0, -0.5, 0]])
+        gray = cv2.filter2D(gray, -1, kernel_sharpen)
+
     _, binary = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
-    
     if is_dark:
-        # === 🔥 침식으로 덩어리 분리 ===
-        kernel = np.ones((3, 3), np.uint8)  # 커널 사이즈 조절 가능
+        kernel = np.ones((3, 3), np.uint8)
         binary = cv2.erode(binary, kernel, iterations=3)
-        
-    # 컨투어 추출
+
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
+
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 30 and h > 20:  # 너무 작은 건 무시
+        if w > 30 and h > 20:
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            
-    cv2.imshow("Detected timetable cells", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    # save_image(img, save_path=path)  # 저장기능
-    
 
     return contours
 
-def save_image(image, save_path):
-    cv2.imwrite(save_path, image) if save_path else None
-
-def draw_day_of_week(image, ratio):
-    # x, y, w, h 구조
-    day_of_week = {
-        'Mon': (43, 0, 150, 52),
-        'Tue': (196, 0, 150, 54),
-        'Wed': (349, 0, 140 , 55),
-        'Thu': (497, 0, 145, 55),
-        'Fri': (655, 0, 150, 55),
-    }
-
-    x, y, w, h = day_of_week['Fri']
-    
-    rec_image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    # 이미지 보기
-    plt.imshow(cv2.cvtColor(rec_image, cv2.COLOR_BGR2RGB))
-    plt.show()
-
-    
-
-def show_image(img):
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    plt.figure(figsize=(10, 10))
-    plt.imshow(img_rgb)
-    plt.axis('off')
-    plt.title('Detected Timetable Cells')
-    plt.show()
-
-def get_ratio(image):
-    # 이미지 열기
-    image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    # 사이즈 확인 (width, height)
-    width, height = image.size
-    print(f"이미지 크기: {width}x{height}")
-
-    # 비율 계산
-    ratio = width / height
-    #print(f"비율 (가로/세로): {ratio:.2f}")
-    return ratio
-
 def process_folder(folder_path):
-    # 허용된 확장자 정의
     valid_exts = ['.jpg', '.jpeg', '.png', '.bmp']
     for filename in os.listdir(folder_path):
-        # 전체 경로
         file_path = os.path.join(folder_path, filename)
-
-        # 확장자 검사 및 파일인지 확인
         if os.path.isfile(file_path) and os.path.splitext(filename)[1].lower() in valid_exts:
-            roi_image = extract_and_resize(file_path,save_path=os.path.join(folder_path, "processed_" + filename))
-            ratio = get_ratio(roi_image) #이미지 비율 보기.
-            # show_image(roi_image)
-            get_contours(roi_image,file_path)
-            draw_day_of_week(roi_image,ratio)
-            
-            
-        
-# 예시 경로
-process_folder("./imgs")
+            roi_image = extract_timetable_box(file_path)
+            if roi_image is not None:
+                resized = cv2.resize(roi_image, (1000, 1250))  # 📏 기준 리사이즈
+                contours = get_contours(resized)
+                draw_day_of_week(resized,contours)
+
+process_folder("./imgs")  # 사용 시 경로 수정
