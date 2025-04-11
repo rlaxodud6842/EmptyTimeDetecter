@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>비는 시간표</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid #e0e0e0;
+      text-align: center;
+      padding: 10px 6px;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f4f8;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .time-col {
+      background-color: #fafafa;
+      font-weight: bold;
+      color: #555;
+      width: 70px;
+    }
+
+    .free {
+      background-color: #c8f7c5;
+    }
+
+    td:hover:not(.time-col) {
+      background-color: #dceffc;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        font-size: 12px;
+      }
+      th, td {
+        padding: 8px 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>비는 시간표</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>시간</th>
+        <th>월</th>
+        <th>화</th>
+        <th>수</th>
+        <th>목</th>
+        <th>금</th>
+      </tr>
+    </thead>
+    <tbody>
+      <script>
+        const schedule = {
+          "월": ["09:00-10:30", "16:15-21:00"],
+          "화": ["11:45-15:00", "16:15-21:00"],
+          "수": ["16:15-21:00"],
+          "목": ["11:45-13:30", "14:45-21:00"],
+          "금": ["09:00-13:30", "16:15-21:00"]
+        };
+
+        const startMinutes = 9 * 60;
+        const endMinutes = 21 * 60;
+
+        function inRange(timeStr, ranges) {
+          const [h, m] = timeStr.split(':').map(Number);
+          const minutes = h * 60 + m;
+
+          return ranges.some(range => {
+            const [start, end] = range.split('-').map(t => {
+              const [sh, sm] = t.split(':').map(Number);
+              return sh * 60 + sm;
+            });
+            return minutes >= start && minutes < end;
+          });
+        }
+
+        for (let t = startMinutes; t < endMinutes; t += 15) {
+          const h = String(Math.floor(t / 60)).padStart(2, '0');
+          const m = String(t % 60).padStart(2, '0');
+          const timeStr = `${h}:${m}`;
+          document.write(`<tr><td class="time-col">${timeStr}</td>`);
+
+          ['월', '화', '수', '목', '금'].forEach(day => {
+            const isFree = schedule[day] && inRange(timeStr, schedule[day]);
+            document.write(`<td class="${isFree ? 'free' : ''}"></td>`);
+          });
+
+          document.write('</tr>');
+        }
+      </script>
+    </tbody>
+  </table>
+</body>
+</html>

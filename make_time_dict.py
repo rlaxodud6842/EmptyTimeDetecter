@@ -14,4 +14,4 @@ for i in range(total_blocks):
     y_ratio = i * block_height_ratio
     time_blocks[label] = (0.0, y_ratio, 1.0, block_height_ratio)  # (x, y, w, h) 비율
 
-print(time_blocks.keys())
+print(time_blocks['09:00~09:15'])
