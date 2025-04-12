@@ -125,14 +125,26 @@ class imageProcessor:
         
         return height, width
 
-    def calculate_daytime(self,roi_width, box_width, startpoint):
-        daytime_output = ['금','목','수','화','월']
+    def calculate_daytime(self, roi_width, box_width, startpoint):
+        box_width = roi_width / 5
 
-        for daytime in daytime_output:
-            roi_width = roi_width - box_width
-            if roi_width - startpoint < 5:
-                print(daytime)
-                return daytime
+        daytime_output = ['월', '화', '수', '목', '금']
+
+        print("\n📌 요일별 X축 구간 (box_width = {:.2f}, roi_width = {})".format(box_width, roi_width))
+        
+        for i, day in enumerate(daytime_output):
+            start_x = i * box_width
+            end_x = (i + 1) * box_width
+            print(f"{day}: {start_x:.1f} ~ {end_x:.1f}")
+
+            if start_x <= startpoint < end_x:
+                print(f"👉 선택된 요일: {day} (startpoint = {startpoint})\n")
+                return day
+
+        print(f"❗ 요일 인식 실패 - startpoint={startpoint} 는 어떤 요일 범위에도 포함되지 않음\n")
+        return 'Unknown'
+
+
 
     def calculate_time(self,start, end):
         starttime_list = [9, 10, 10.5, 12, 13.5, 14,14.5, 15, 16.5, 18, 19.5]
