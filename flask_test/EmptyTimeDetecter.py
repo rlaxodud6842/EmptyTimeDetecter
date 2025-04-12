@@ -77,6 +77,28 @@ def filter_under_fifteen(unfiltered_list):
     unfiltered_list[key] = [x for x in unfiltered_list[key] if float(x.split('-')[1]) - float(x.split('-')[0]) > 0.25]
 
   return unfiltered_list
+def float_to_time(f):
+    total_minutes = round(f * 60)
+    h = total_minutes // 60
+    m = total_minutes % 60
+    return f"{h:02d}:{m:02d}"
+
+  
+def convert_schedule(data):
+    raw_schedule = data  # 요일별 시간대
+    print(data)
+    final = {}
+
+    for day, times in raw_schedule.items():
+        converted = []
+        for time_range in times:
+            start, end = map(float, time_range.split('-'))
+            start_str = float_to_time(start)
+            end_str = float_to_time(end)
+            converted.append(f"{start_str}-{end_str}")
+        final[day] = converted
+
+    return final
 
 # mapped : 요일별로 해당하는 수업 개수 counting한 dictionary.
 def construct_table(mapped):
@@ -101,11 +123,9 @@ def construct_table(mapped):
   # 연결된 시간 잇기
   connected_table = connect_time(minimum_table)
   filtered_table = filter_under_fifteen(connected_table)
-
-  print(filtered_table)
-  print(minimum)
-
-  return filtered_table, minimum
+  filter_table_readable = convert_schedule(filtered_table)
+  print(filter_table_readable)
+  return filter_table_readable, minimum
 
 def first_person(data):
   time_map = time_mapping()
@@ -124,13 +144,12 @@ def filter_table(meets):
 
   return output, participants, minimum
 
-happy = ""
+# fmeets = {"tayoung" : {'월': ['15-16.25', '12-13.25', '10.5-11.75'], '수': ['13.5-14.75', '12-13.25', '9-10.25'], '목': ['10.5-11.75', '9-10.25'], '화': ['10.5-11.75', '9-10.25']},
+#           "somin" : {'수': ['15-16.25', '9-11.75'], '화': ['15-16.25'], '금': ['13.5-16.25'], '목': ['13.5-14.75'], '월': ['13.5-14.75']}
+#           }
 
-fmeets = {"tayoung" : {'월': ['15-16.25', '12-13.25', '10.5-11.75'], '수': ['13.5-14.75', '12-13.25', '9-10.25'], '목': ['10.5-11.75', '9-10.25'], '화': ['10.5-11.75', '9-10.25']},
-          "somin" : {'수': ['15-16.25', '9-11.75'], '화': ['15-16.25'], '금': ['13.5-16.25'], '목': ['13.5-14.75'], '월': ['13.5-14.75']}
-          }
+# filter_table(fmeets)
 
-filter_table(fmeets)
 #처음 실행되면 meets에는 사람과 그사람 시간표가 있는 모양
 #time_map 에는 우선 모든 시간을 만들어 둔다
 #참여자 배열을 만들고

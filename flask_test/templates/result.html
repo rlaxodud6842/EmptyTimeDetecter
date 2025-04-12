@@ -129,13 +129,7 @@
   <textarea id="free-text" readonly placeholder="복사된 '비는 시간' 텍스트가 여기에 표시됩니다."></textarea>
 
   <script>
-    const schedule = {
-      "월": ["09:00-10:30", "16:15-21:00"],
-      "화": ["11:45-15:00", "16:15-21:00"],
-      "수": ["16:15-21:00"],
-      "목": ["11:45-13:30", "14:45-21:00"],
-      "금": ["09:00-13:30", "16:15-21:00"]
-    };
+    const schedule = {{ converted_schedule | t  ojson }};
 
     const startMinutes = 9 * 60;
     const endMinutes = 21 * 60;
