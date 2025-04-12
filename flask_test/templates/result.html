@@ -129,7 +129,7 @@
   <textarea id="free-text" readonly placeholder="복사된 '비는 시간' 텍스트가 여기에 표시됩니다."></textarea>
 
   <script>
-    const schedule = {{ converted_schedule | t  ojson }};
+    const schedule = {{ converted_schedule | tojson }};
 
     const startMinutes = 9 * 60;
     const endMinutes = 21 * 60;

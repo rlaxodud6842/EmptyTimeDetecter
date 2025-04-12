@@ -78,15 +78,25 @@ def filter_under_fifteen(unfiltered_list):
 
   return unfiltered_list
 def float_to_time(f):
-    total_minutes = round(f * 60)
-    h = total_minutes // 60
-    m = total_minutes % 60
+    h = int(f)
+    fraction = round((f - h) * 100)  # 소수점 아래 두 자리 확인
+
+    if fraction == 25:
+        m = 15
+    elif fraction == 5 or fraction == 50:
+        m = 30
+    elif fraction == 75:
+        m = 45
+    elif fraction == 0:
+        m = 0
+    else:
+        # 예외처리: 혹시 다른 값이 들어오면 강제 변환
+        m = round((f - h) * 60)
+
     return f"{h:02d}:{m:02d}"
 
-  
 def convert_schedule(data):
     raw_schedule = data  # 요일별 시간대
-    print(data)
     final = {}
 
     for day, times in raw_schedule.items():

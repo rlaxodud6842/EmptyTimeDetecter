@@ -1,7 +1,7 @@
 import cv2
 import os
 import matplotlib.pyplot as plt
-
+import numpy as np
 class imageProcessor:
     def handle_mode(self,img):
         # 라이트 모드 대응 - 색 반전, THRESHOLD 조정
@@ -61,24 +61,26 @@ class imageProcessor:
 
         return class_daytime, class_time
 
-    def get_timebox(self,THEME, ROI, box_height, box_width):
+    def get_timebox(self,THEME, ROI, box_height, box_width,img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        mean_val = np.mean(gray)
+        is_dark = mean_val < 127
+        if is_dark:
+            gray = cv2.bitwise_not(gray)
+            kernel_sharpen = np.array([[0, -0.5, 0], [-0.5, 3, -0.5], [0, -0.5, 0]])
+            gray = cv2.filter2D(gray, -1, kernel_sharpen)
 
-        if THEME == 'LIGHT': # normal theme
-            # 110 이 가장 잘 나온 듯
-            TEMP = 255 - ROI
-            gray = cv2.cvtColor(TEMP, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
+        _, binary = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
+        if is_dark:
+            kernel = np.ones((3, 3), np.uint8)
+            binary = cv2.erode(binary, kernel, iterations=3)
 
-        ret, otsu2 = cv2.threshold(gray, -1, 255,  cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
-        contours, hierarchy = cv2.findContours(otsu2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # box 크기로 필요 없는 것 제거
-        results = [x for x in contours if cv2.contourArea(x) > 1000]
+        results = [x for x in contours if cv2.contourArea(x) > 5000]
 
         export_data = {}
-        
         for box in results:
             class_daytime, class_time = self.get_time(ROI, box, box_height, box_width)
 
@@ -144,7 +146,7 @@ class imageProcessor:
         box_height, box_width = self.get_standard_box_size(ROI)
         
         # get timetable box
-        output = self.get_timebox(THEME, ROI, box_height, box_width)
+        output = self.get_timebox(THEME, ROI, box_height, box_width,img)
         print(output)
         return output
     
@@ -155,3 +157,4 @@ class imageProcessor:
             if os.path.isfile(file_path) and os.path.splitext(filename)[1].lower() in valid_exts:
                 img = cv2.imread(file_path)
                 return self.export_img(img)
+            
