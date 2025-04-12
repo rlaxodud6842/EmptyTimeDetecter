@@ -62,7 +62,7 @@ class imageProcessor:
         return class_daytime, class_time
 
     def get_timebox(self,THEME, ROI, box_height, box_width,img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
         mean_val = np.mean(gray)
         is_dark = mean_val < 127
         if is_dark:
@@ -71,18 +71,32 @@ class imageProcessor:
             gray = cv2.filter2D(gray, -1, kernel_sharpen)
 
         _, binary = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
+        
         if is_dark:
             kernel = np.ones((3, 3), np.uint8)
-            binary = cv2.erode(binary, kernel, iterations=3)
+            binary = cv2.erode(binary, kernel, iterations=2)
 
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+        
+        
         # box 크기로 필요 없는 것 제거
         results = [x for x in contours if cv2.contourArea(x) > 5000]
+        
+
+        for cnt in results:
+            x, y, w, h = cv2.boundingRect(cnt)
+            if w > 30 and h > 20:
+                cv2.rectangle(ROI, (x, y), (x + w, y + h), (0, 0, 255), 2)
+
+        plt.imshow(cv2.cvtColor(ROI, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        plt.title("ROI for Days of Week")
+        plt.show()
 
         export_data = {}
         for box in results:
             class_daytime, class_time = self.get_time(ROI, box, box_height, box_width)
+            # print(class_daytime, class_time)
 
             if class_daytime in export_data:
                 export_data[class_daytime].append(class_time)
@@ -117,11 +131,12 @@ class imageProcessor:
         for daytime in daytime_output:
             roi_width = roi_width - box_width
             if roi_width - startpoint < 5:
+                print(daytime)
                 return daytime
 
     def calculate_time(self,start, end):
-        starttime_list = [9, 10.5, 12, 13.5, 15, 16.5, 18, 19.5]
-        endtime_list = [10.25, 11.75, 13.25, 14.75, 16.25, 17.75, 19.25, 20.75]
+        starttime_list = [9, 10, 10.5, 12, 13.5, 14,14.5, 15, 16.5, 18, 19.5]
+        endtime_list = [10.25, 11.75, 13.25, 13.75, 14.75, 16.25, 17.75, 19.25, 20.75]
         
         class_start = [abs(x - start) for x in starttime_list]
         class_end = [abs(x - (start + end)) for x in endtime_list]
@@ -157,4 +172,6 @@ class imageProcessor:
             if os.path.isfile(file_path) and os.path.splitext(filename)[1].lower() in valid_exts:
                 img = cv2.imread(file_path)
                 return self.export_img(img)
-            
+    
+# IP =imageProcessor()
+# IP.process_folder('./uploads/')
