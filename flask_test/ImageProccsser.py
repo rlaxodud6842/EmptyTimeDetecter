@@ -55,7 +55,7 @@ class imageProcessor:
         time_line = int(img.shape[0]/box_height) + 9
         class_start = (img.shape[0] - start[1])/box_height
         class_end = (end[1] - start[1])/box_height
-        
+                
         class_daytime = self.calculate_daytime(img.shape[1], box_width, start[0])
         class_time = self.calculate_time(time_line - class_start, class_end)
 
@@ -88,10 +88,10 @@ class imageProcessor:
             if w > 30 and h > 20:
                 cv2.rectangle(ROI, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
-        plt.imshow(cv2.cvtColor(ROI, cv2.COLOR_BGR2RGB))
-        plt.axis('off')
-        plt.title("ROI for Days of Week")
-        plt.show()
+        # plt.imshow(cv2.cvtColor(ROI, cv2.COLOR_BGR2RGB))
+        # plt.axis('off')
+        # plt.title("ROI for Days of Week")
+        # plt.show()
 
         export_data = {}
         for box in results:
@@ -128,20 +128,13 @@ class imageProcessor:
     def calculate_daytime(self, roi_width, box_width, startpoint):
         box_width = roi_width / 5
 
-        daytime_output = ['월', '화', '수', '목', '금']
-
-        print("\n📌 요일별 X축 구간 (box_width = {:.2f}, roi_width = {})".format(box_width, roi_width))
-        
+        daytime_output = ['월', '화', '수', '목', '금']        
         for i, day in enumerate(daytime_output):
             start_x = i * box_width
             end_x = (i + 1) * box_width
-            print(f"{day}: {start_x:.1f} ~ {end_x:.1f}")
 
             if start_x <= startpoint < end_x:
-                print(f"👉 선택된 요일: {day} (startpoint = {startpoint})\n")
                 return day
-
-        print(f"❗ 요일 인식 실패 - startpoint={startpoint} 는 어떤 요일 범위에도 포함되지 않음\n")
         return 'Unknown'
 
 
@@ -149,13 +142,14 @@ class imageProcessor:
     def calculate_time(self,start, end):
         starttime_list = [9, 10, 10.5, 12, 13.5, 14,14.5, 15, 16.5, 18, 19.5]
         endtime_list = [10.25, 11.75, 13.25, 13.75, 14.75, 16.25, 17.75, 19.25, 20.75]
+        # print(start, end)
+        
         
         class_start = [abs(x - start) for x in starttime_list]
         class_end = [abs(x - (start + end)) for x in endtime_list]
         
         output_start = starttime_list[class_start.index(min(class_start))]
         output_end = endtime_list[class_end.index(min(class_end))]
-
 
         # 커스텀으로 한 시간의 경우 예외 처리 - 30분 단위로 가장 가까운 곳으로 지정
         if min(class_start) > 0.35:
